@@ -143,3 +143,9 @@ SELECt * FROM T1
 - spring security filter chain에 OncePerRequestFilter를 구현한 JwtAuthorizationFilter를 구현하게 됨
 - 해당 필터에서 Bearer형식의 JWT가 해당 Authorization Header 값에 들어있는지 유효성 검증을 하게 됨
 - 검증 완료시 SecurityContextHolder에 Authentication 객체를 만들어 완료하게되고 검증 실패시 에러를 던지게 됨
+
+# Spring
+## SpringBoot의 이점
+- 내장 톰캣 지원
+- 라이브러리 의존성 관리
+- starter 종속성 제공
