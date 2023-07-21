@@ -1,7 +1,28 @@
 # interview-study
 
 # 네트워크
+## SSL
 - SSL(Secure Sockets Layer, 보안 소켓 계층) : 웹사이트와 브라우저 사이의 전송되는 데이터를 암호화하여 인터넷 연결을 보호하기 위한 표준 기술
+
+## Ngnix와 apache
+- apache
+    - 각 클라이언트 요청마다 새로운 프로세스 혹은 쓰레드를 생성함 -> 메모리 사용량이 상대적으로 높음
+    - 클래식 프로세스 또는 쓰레드 기반 아키텍처
+    - 요청 당 커넥션 프로세스 생성
+    - PREFORK로 미리 프로세스풀을 만듬
+    - keep-alive = 커넥션 재사용 -> 요청 더욱 많아짐 -> C10K 문제(커넥션이 10000개 이상 생성 불가) 발생
+    - 동시에 처리하는 프로세스가 많을 수록 컨텍스트 스위칭을 많이하기 때문에 메모리가 부족함
+    - 호환성과 확장성이 좋음
+- nginx
+    - 단일 프로세스 또는 쓰레드에서 많은 연결을 처리하며 비동기적 처리를 하여 메모리 사용을 효율적으로 관리함
+    - 이벤트 기반 아키텍처
+    - 웹서버, 리버스 프록시, 로드밸런서, 이벤트 기반 구조
+    - apache 서버의 약점을 보완하기 위해 탄생
+    - master process, worker process 기반 
+    - worker process에 지정된 소켓 배정, 프로세스가 쉬지 않고 일함, Event(커넥션 형성, 커넥션 제거, 새로운 요청처리)가 큐에 비동기 대기, 오래 걸리는 요청들은 따로 쓰레드풀에 배정
+    - 컨텍스트 스위칭을 줄임, 커넥션양 100~1000배 증가, 속도 상승
+    - 로드밸런서 요청 분산
+    - NGINX 서버 추가가 쉬움
 
 # 데이터베이스
 ## 기본 용어
@@ -99,3 +120,26 @@ SELECt * FROM T1
 4. 병렬처리 내부 요소들을 병렬적으로 처리해 멀티코어 CPU를 활용한 빠른 처리가 가능함
 
 # JWT
+
+## 리프레시 토큰 사용 이유
+- 액세스 토큰은 유효기간을 길게하면 보안 문제가 있고 짧게 하면 사용자들에게 좋지않은 경험을 주게됨
+- 그래서 리프레시 토큰을 사용하여 액세스 토큰이 만료되었을 때 재발급을 받기위해 만들어짐
+- 리프레시 토큰은 보안을 높이기 위해 DB에 저장하고 스크립트 공격 등을 대비하여 js를 통해 접근불가한 HttpOnly 속성과 secure 속성을 쿠키에 함께 부여하게 됨
+
+# Security
+## OncePerRequestFilter
+- spring security 필터 체인에서 요청당 한번만 실행되는 필터를 구현하는데 사용
+
+## 인증처리 순서
+1. 해당 api endpoint에 username과 password를 작성하여 요청함
+2. 요청받은 후 서비스 레이어에서 AuthenticationManagerBuilder를 통해 AuthenticationManager 객체를 가져옴
+3. username과 password를 이용하여 UsernamePasswordAuthenticationToken을 만들어 AuthenticationManager의 authenticate 메서드에 인자로 넣음
+4. 내부적인 동작을 통해 AuthenticationProvider에서 UserDetailsService의 loadByUsername 메서드를 호출하게 되고 loadByUsername에서 실제 DB에 접속하여 해당 username에 해당하는 엔티티를 불러오게됨
+5. 해당 엔티티를 불러와 UserDetails의 구현체를 생성하여 리턴하게됨
+6. 내부적으로 UserDetails와 UsernamePasswordAuthenticationToken을 비교하여(username, password 검증) 인증에 성고하면 SecurityContextHolder에 Authentication 객체를 set하여 완료하게 되고 아닐시 에러를 던지게 됨
+7. 성공적으로 인증이 완료되면 액세스 토큰(json body)과 리프레시 토큰(cookie)을 생성하여 리턴하게됨
+
+## JWT 헤더 검증
+- spring security filter chain에 OncePerRequestFilter를 구현한 JwtAuthorizationFilter를 구현하게 됨
+- 해당 필터에서 Bearer형식의 JWT가 해당 Authorization Header 값에 들어있는지 유효성 검증을 하게 됨
+- 검증 완료시 SecurityContextHolder에 Authentication 객체를 만들어 완료하게되고 검증 실패시 에러를 던지게 됨
