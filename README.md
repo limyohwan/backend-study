@@ -3,6 +3,9 @@
 # 네트워크
 ## SSL
 - SSL(Secure Sockets Layer, 보안 소켓 계층) : 웹사이트와 브라우저 사이의 전송되는 데이터를 암호화하여 인터넷 연결을 보호하기 위한 표준 기술
+- HTTP 요청 메시지 전체를 암호화함
+- 대칭키 암호화 : 같은 키로 암호화함, AES 알고리즘
+- 공개키 암호화 : 서로 다른 키(public key, private key)를 사용하여 암호화함, RSA 알고리즘
 
 ## Ngnix와 apache
 - apache
@@ -120,6 +123,16 @@ SELECt * FROM T1
 4. 병렬처리 내부 요소들을 병렬적으로 처리해 멀티코어 CPU를 활용한 빠른 처리가 가능함
 
 # JWT
+- JWT의 가장 큰 장점은 self descriptionable 하다는 것임
+- 토큰 자체로 인증을 증명하여 굳이 데이터베이스 조회, session 조회 없이 인증이 가능함
+- JOSE(Json Object Signing and Encryption) : 당사자간 claim을 안전하게 전송하기 위한 프레임워크
+- 무결성 = 완전성, 정확성, 일관성
+- JWS와 JWE를 사용하여 보안성을 올림
+- JWS를 통해 무결성을 올림
+- JWE를 통해 claim을 암호화하여 기밀성을 올림
+- JWT secret 알고리즘 = HMAC 512 사용(SHA 512를 해시함수로 구현, 데이터 무결성 검증)
+- 인증 상태를 서버에 저장하지 않아 메모리 사용에 효율적임
+- 필수정보를 스스로 가지고 있어 DB 조회가 필요하지 않음
 
 ## 리프레시 토큰 사용 이유
 - 액세스 토큰은 유효기간을 길게하면 보안 문제가 있고 짧게 하면 사용자들에게 좋지않은 경험을 주게됨
@@ -149,3 +162,43 @@ SELECt * FROM T1
 - 내장 톰캣 지원
 - 라이브러리 의존성 관리
 - starter 종속성 제공
+
+## @WebMvcTest
+- 웹애플리케이션 계층의 테스트를 작성할 때 사용
+- 주로 Controller와 관련된 테스트
+- Spring MVC 관련 테스트 기능만 로드하므로 웹계층에 관련된 빈들만 생성됨
+- 실제 웹서버가 실행되지 않기 때문에 속도가 빠르며 다른 레이어에 대한 빈들은 로드하지 않기 때문에 MockBean을 주입하여 사용되어야 함
+
+## @SpringBootTest
+- 전체 애플리케이션 컨텍스트를 로드하여 통합 테스트를 작성할 때 사용
+- 실제 모든 빈을 로드하여 테스트함
+
+# 동시성 다루기
+## synchronized 키워드
+- 애플리케이션에 종속적이라 다중 서버 환경에서 사용 불가
+
+## pessimistic lock
+- 실제 select for update 쿼리가 나감
+- 동시성 이슈가 빈번히 일어나는 부분에 사용하면 optimistic lock보다 성능이 좋음
+
+## optimistic lock
+- JPA의 @Version을 이용한 방법
+- 별도의 lock을 실제로 잡지는 않아 재시도 처리를 따로 해줘야함(Facade 패턴)
+- 동시성 이슈가 빈번하게 일어나지 않을 경우에 사용하는 걸 권장함
+
+## mysql named lock
+- 분산락의 일종
+- transaction 종료시 lock 해제와 세션 관리 필요
+- 실제 사용시 구현이 복잡할 수 있음(별도의 데이터소스, jdbc 셋팅 필요)
+- select get_lock, select release_lock
+
+## redis lettuce
+- setnx 명령어를 활용한 분산락
+- 계속해서 락획득을 시도하는 로직과 재시도 로직이 필요함
+- 재시도가 필요하지 않을 경우 사용
+
+## redis reddison
+- pub-sub 기반의 lock 구현
+- 락 획득 재시도를 기본으로 제공하여 별도 로직이 필요하지 않음
+- 별도 라이브러리 설치 필요
+- lettuce에 비해 구현이 복잡함
