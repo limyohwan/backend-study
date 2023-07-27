@@ -1,4 +1,4 @@
-# interview-study
+# backend-study
 
 # 네트워크
 ## SSL
