@@ -108,7 +108,7 @@
 - MySQL에서는 EXPLAIN을 통해 쿼리 테스트 가능
 ```
 EXLPLAIN
-SELECt * FROM T1
+SELECT * FROM T1
 ```
 
 # 자바
